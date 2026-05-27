@@ -157,35 +157,66 @@ function renderScene(){
 
   if(showConstruction){
     const branch=curvePoints(divisions+1).top;
+
+    function drawArcFromFocus(startPt, endPt, colour, width, opacity, sweep){
+      const r=Math.hypot(startPt.x-F.x,startPt.y-F.y);
+      const arc=`M ${startPt.x.toFixed(2)} ${startPt.y.toFixed(2)} A ${r.toFixed(2)} ${r.toFixed(2)} 0 0 ${sweep} ${endPt.x.toFixed(2)} ${endPt.y.toFixed(2)}`;
+      svg.appendChild(svgEl("path",{d:arc,fill:"none",stroke:colour,"stroke-width":width,opacity:opacity}));
+    }
+
     branch.forEach((pt,i)=>{
+      const topPt=pt;
+      const bottomPt={x:pt.x,y:-pt.y};
       const axisPt=mapScene({x:pt.x,y:0});
-      const eccPt=mapScene({x:pt.x,y:eccentricityY(pt.x)});
-      const focalPt=mapScene({x:focusDistance,y:eccentricityY(pt.x)});
-      const P=mapScene(pt);
-      line(svg,axisPt,eccPt,{stroke:"#22c55e","stroke-width":1.2,opacity:.7});
-      line(svg,eccPt,focalPt,{stroke:"#22c55e","stroke-width":1.2,opacity:.7});
-      line(svg,axisPt,P,{stroke:"#22c55e","stroke-width":1.2,opacity:.45});
-      const r=Math.hypot(focalPt.x-F.x,focalPt.y-F.y);
-      const arc=`M ${focalPt.x.toFixed(2)} ${focalPt.y.toFixed(2)} A ${r.toFixed(2)} ${r.toFixed(2)} 0 0 1 ${P.x.toFixed(2)} ${P.y.toFixed(2)}`;
-      svg.appendChild(svgEl("path",{d:arc,fill:"none",stroke:"#22c55e","stroke-width":1.2,opacity:.75}));
-      circle(svg,P,3,{fill:"#18181b",opacity:.65});
-      if(showLabels&&i>0){svg.appendChild(textEl({x:P.x+6,y:P.y-6,"font-size":11,fill:"#52525b"},"P"+i));}
+      const eccTop=mapScene({x:pt.x,y:eccentricityY(pt.x)});
+      const eccBottom=mapScene({x:pt.x,y:-eccentricityY(pt.x)});
+      const focalTop=mapScene({x:focusDistance,y:eccentricityY(pt.x)});
+      const focalBottom=mapScene({x:focusDistance,y:-eccentricityY(pt.x)});
+      const PTop=mapScene(topPt);
+      const PBottom=mapScene(bottomPt);
+
+      line(svg,axisPt,eccTop,{stroke:"#22c55e","stroke-width":1.2,opacity:.7});
+      line(svg,axisPt,eccBottom,{stroke:"#22c55e","stroke-width":1.2,opacity:.45});
+      line(svg,eccTop,focalTop,{stroke:"#22c55e","stroke-width":1.2,opacity:.7});
+      line(svg,eccBottom,focalBottom,{stroke:"#22c55e","stroke-width":1.2,opacity:.45});
+      line(svg,PTop,PBottom,{stroke:"#22c55e","stroke-width":1.2,opacity:.38});
+
+      drawArcFromFocus(focalTop,PTop,"#22c55e",1.2,.75,1);
+      drawArcFromFocus(focalBottom,PBottom,"#22c55e",1.2,.75,0);
+
+      circle(svg,PTop,3,{fill:"#18181b",opacity:.65});
+      circle(svg,PBottom,3,{fill:"#18181b",opacity:.65});
+      if(showLabels&&i>0){
+        svg.appendChild(textEl({x:PTop.x+6,y:PTop.y-6,"font-size":11,fill:"#52525b"},"P"+i));
+        svg.appendChild(textEl({x:PBottom.x+6,y:PBottom.y+13,"font-size":11,fill:"#52525b"},"P"+i));
+      }
     });
 
     const cp=constructionPoint();
+    const cpBottom={x:cp.x,y:-cp.y};
     const axisPt=mapScene({x:cp.x,y:0});
-    const eccPt=mapScene({x:cp.x,y:eccentricityY(cp.x)});
-    const focalPt=mapScene({x:focusDistance,y:eccentricityY(cp.x)});
-    const P=mapScene(cp);
-    line(svg,axisPt,eccPt,{stroke:"#2563eb","stroke-width":3,opacity:.95});
-    line(svg,eccPt,focalPt,{stroke:"#2563eb","stroke-width":3,opacity:.95});
-    line(svg,axisPt,P,{stroke:"#2563eb","stroke-width":3,opacity:.7});
-    const r=Math.hypot(focalPt.x-F.x,focalPt.y-F.y);
-    const arc=`M ${focalPt.x.toFixed(2)} ${focalPt.y.toFixed(2)} A ${r.toFixed(2)} ${r.toFixed(2)} 0 0 1 ${P.x.toFixed(2)} ${P.y.toFixed(2)}`;
-    svg.appendChild(svgEl("path",{d:arc,fill:"none",stroke:"#2563eb","stroke-width":3,opacity:.95}));
-    circle(svg,P,8,{fill:"#2563eb",stroke:"white","stroke-width":3});
-    circle(svg,eccPt,5,{fill:"#22c55e"});
-    circle(svg,focalPt,5,{fill:"#22c55e"});
+    const eccTop=mapScene({x:cp.x,y:eccentricityY(cp.x)});
+    const eccBottom=mapScene({x:cp.x,y:-eccentricityY(cp.x)});
+    const focalTop=mapScene({x:focusDistance,y:eccentricityY(cp.x)});
+    const focalBottom=mapScene({x:focusDistance,y:-eccentricityY(cp.x)});
+    const PTop=mapScene(cp);
+    const PBottom=mapScene(cpBottom);
+
+    line(svg,axisPt,eccTop,{stroke:"#2563eb","stroke-width":3,opacity:.95});
+    line(svg,axisPt,eccBottom,{stroke:"#2563eb","stroke-width":3,opacity:.65});
+    line(svg,eccTop,focalTop,{stroke:"#2563eb","stroke-width":3,opacity:.95});
+    line(svg,eccBottom,focalBottom,{stroke:"#2563eb","stroke-width":3,opacity:.65});
+    line(svg,PTop,PBottom,{stroke:"#2563eb","stroke-width":3,opacity:.65});
+
+    drawArcFromFocus(focalTop,PTop,"#2563eb",3,.95,1);
+    drawArcFromFocus(focalBottom,PBottom,"#2563eb",3,.95,0);
+
+    circle(svg,PTop,8,{fill:"#2563eb",stroke:"white","stroke-width":3});
+    circle(svg,PBottom,8,{fill:"#2563eb",stroke:"white","stroke-width":3});
+    circle(svg,eccTop,5,{fill:"#22c55e"});
+    circle(svg,eccBottom,5,{fill:"#22c55e"});
+    circle(svg,focalTop,5,{fill:"#22c55e"});
+    circle(svg,focalBottom,5,{fill:"#22c55e"});
   }
 
   if(showLabels){
