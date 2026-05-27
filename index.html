@@ -165,12 +165,12 @@ function renderScene(){
       line(svg,axisPt,eccPt,{stroke:"#22c55e","stroke-width":1.2,opacity:.7});
       line(svg,eccPt,focalPt,{stroke:"#22c55e","stroke-width":1.2,opacity:.7});
       line(svg,axisPt,P,{stroke:"#22c55e","stroke-width":1.2,opacity:.45});
-      const r=Math.abs(e*pt.x*scale);
-      const startAngle=Math.atan2(focalPt.y-F.y,focalPt.x-F.x);
-      const endAngle=Math.atan2(P.y-F.y,P.x-F.x);
-      const large=0;
-      const sweep=P.y>F.y?1:0;
-      const arc=`M ${focalPt.x.toFixed(2)} ${focalPt.y.toFixed(2)} A ${r.toFixed(2)} ${r.toFixed(2)} 0 ${large} ${sweep} ${P.x.toFixed(2)} ${P.y.toFixed(2)}`;
+      const centre={x:F.x,y:focalPt.y};
+      const r=Math.abs(P.x-centre.x);
+      const start=Math.atan2(focalPt.y-centre.y,focalPt.x-centre.x);
+      const end=Math.atan2(P.y-centre.y,P.x-centre.x);
+      const sweep=0;
+      const arc=`M ${focalPt.x.toFixed(2)} ${focalPt.y.toFixed(2)} A ${r.toFixed(2)} ${r.toFixed(2)} 0 0 ${sweep} ${P.x.toFixed(2)} ${P.y.toFixed(2)}`;
       svg.appendChild(svgEl("path",{d:arc,fill:"none",stroke:"#22c55e","stroke-width":1.2,opacity:.75}));
       circle(svg,P,3,{fill:"#18181b",opacity:.65});
       if(showLabels&&i>0){svg.appendChild(textEl({x:P.x+6,y:P.y-6,"font-size":11,fill:"#52525b"},"P"+i));}
@@ -184,7 +184,10 @@ function renderScene(){
     line(svg,axisPt,eccPt,{stroke:"#2563eb","stroke-width":3,opacity:.95});
     line(svg,eccPt,focalPt,{stroke:"#2563eb","stroke-width":3,opacity:.95});
     line(svg,axisPt,P,{stroke:"#2563eb","stroke-width":3,opacity:.7});
-    line(svg,F,P,{stroke:"#2563eb","stroke-width":2,"stroke-dasharray":"6 5",opacity:.9});
+    const centre={x:F.x,y:focalPt.y};
+    const r=Math.abs(P.x-centre.x);
+    const arc=`M ${focalPt.x.toFixed(2)} ${focalPt.y.toFixed(2)} A ${r.toFixed(2)} ${r.toFixed(2)} 0 0 0 ${P.x.toFixed(2)} ${P.y.toFixed(2)}`;
+    svg.appendChild(svgEl("path",{d:arc,fill:"none",stroke:"#2563eb","stroke-width":3,opacity:.95}));
     circle(svg,P,8,{fill:"#2563eb",stroke:"white","stroke-width":3});
     circle(svg,eccPt,5,{fill:"#22c55e"});
     circle(svg,focalPt,5,{fill:"#22c55e"});
