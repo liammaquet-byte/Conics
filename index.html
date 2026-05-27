@@ -75,6 +75,20 @@ function textEl(a,t){const el=svgEl("text",a);el.textContent=t;return el}
 function line(p,a,b,attrs){p.appendChild(svgEl("line",{x1:a.x,y1:a.y,x2:b.x,y2:b.y,...attrs}))}
 function circle(p,c,r,attrs){p.appendChild(svgEl("circle",{cx:c.x,cy:c.y,r,...attrs}))}
 function pathFrom(pts){return pts.map((p,i)=>(i?"L":"M")+p.x.toFixed(2)+","+p.y.toFixed(2)).join(" ")}
+function arcPathCentredOnF(F,start,end,steps=32){
+  const r=Math.hypot(start.x-F.x,start.y-F.y);
+  let a0=Math.atan2(start.y-F.y,start.x-F.x);
+  let a1=Math.atan2(end.y-F.y,end.x-F.x);
+  let diff=a1-a0;
+  while(diff>Math.PI) diff-=Math.PI*2;
+  while(diff<-Math.PI) diff+=Math.PI*2;
+  const pts=[];
+  for(let i=0;i<=steps;i++){
+    const a=a0+diff*i/steps;
+    pts.push({x:F.x+r*Math.cos(a),y:F.y+r*Math.sin(a)});
+  }
+  return pathFrom(pts);
+}
 
 function setModeDefaults(){
   if(mode==="parabola") e=1;
@@ -155,68 +169,33 @@ function renderScene(){
   svg.appendChild(svgEl("path",{d:pathFrom(curves.top.map(mapScene)),fill:"none",stroke:"#18181b","stroke-width":4,"stroke-linecap":"round","stroke-linejoin":"round"}));
   if(mode!=="parabola" || e<1) svg.appendChild(svgEl("path",{d:pathFrom(curves.bottom.map(mapScene)),fill:"none",stroke:"#18181b","stroke-width":4,"stroke-linecap":"round","stroke-linejoin":"round"}));
 
-  function drawArcCentredOnF(startPt,endPt,colour,width,opacity,direction){
-    const r=Math.hypot(startPt.x-F.x,startPt.y-F.y);
-    let a0=Math.atan2(startPt.y-F.y,startPt.x-F.x);
-    let a1=Math.atan2(endPt.y-F.y,endPt.x-F.x);
-    if(direction==="upper"){
-      while(a1>a0) a1-=Math.PI*2;
-    }else{
-      while(a1<a0) a1+=Math.PI*2;
-    }
-    const steps=28;
-    let d="";
-    for(let j=0;j<=steps;j++){
-      const a=a0+(a1-a0)*j/steps;
-      const x=F.x+r*Math.cos(a);
-      const y=F.y+r*Math.sin(a);
-      d+=(j===0?"M":"L")+x.toFixed(2)+","+y.toFixed(2);
-    }
-    svg.appendChild(svgEl("path",{d,fill:"none",stroke:colour,"stroke-width":width,opacity,"stroke-linecap":"round"}));
-  }
-
   if(showConstruction){
     const branch=curvePoints(divisions+1).top;
     branch.forEach((pt,i)=>{
-      const bottomPt={x:pt.x,y:-pt.y};
       const axisPt=mapScene({x:pt.x,y:0});
       const eccPt=mapScene({x:pt.x,y:eccentricityY(pt.x)});
       const focalPt=mapScene({x:focusDistance,y:eccentricityY(pt.x)});
-      const PTop=mapScene(pt);
-      const PBottom=mapScene(bottomPt);
-
+      const P=mapScene(pt);
       line(svg,axisPt,eccPt,{stroke:"#22c55e","stroke-width":1.2,opacity:.7});
       line(svg,eccPt,focalPt,{stroke:"#22c55e","stroke-width":1.2,opacity:.7});
-      line(svg,PTop,PBottom,{stroke:"#22c55e","stroke-width":1.2,opacity:.38});
-
-      drawArcCentredOnF(focalPt,PTop,"#22c55e",1.2,.75,"upper");
-      drawArcCentredOnF(focalPt,PBottom,"#22c55e",1.2,.75,"lower");
-
-      circle(svg,PTop,3,{fill:"#18181b",opacity:.65});
-      circle(svg,PBottom,3,{fill:"#18181b",opacity:.65});
-      if(showLabels&&i>0){
-        svg.appendChild(textEl({x:PTop.x+6,y:PTop.y-6,"font-size":11,fill:"#52525b"},"P"+i));
-        svg.appendChild(textEl({x:PBottom.x+6,y:PBottom.y+13,"font-size":11,fill:"#52525b"},"P"+i));
-      }
+      line(svg,axisPt,P,{stroke:"#22c55e","stroke-width":1.2,opacity:.45});
+      const arc=arcPathCentredOnF(F,focalPt,P);
+      svg.appendChild(svgEl("path",{d:arc,fill:"none",stroke:"#22c55e","stroke-width":1.2,opacity:.75}));
+      circle(svg,P,3,{fill:"#18181b",opacity:.65});
+      if(showLabels&&i>0){svg.appendChild(textEl({x:P.x+6,y:P.y-6,"font-size":11,fill:"#52525b"},"P"+i));}
     });
 
     const cp=constructionPoint();
-    const cpBottom={x:cp.x,y:-cp.y};
     const axisPt=mapScene({x:cp.x,y:0});
     const eccPt=mapScene({x:cp.x,y:eccentricityY(cp.x)});
     const focalPt=mapScene({x:focusDistance,y:eccentricityY(cp.x)});
-    const PTop=mapScene(cp);
-    const PBottom=mapScene(cpBottom);
-
+    const P=mapScene(cp);
     line(svg,axisPt,eccPt,{stroke:"#2563eb","stroke-width":3,opacity:.95});
     line(svg,eccPt,focalPt,{stroke:"#2563eb","stroke-width":3,opacity:.95});
-    line(svg,PTop,PBottom,{stroke:"#2563eb","stroke-width":3,opacity:.65});
-
-    drawArcCentredOnF(focalPt,PTop,"#2563eb",3,.95,"upper");
-    drawArcCentredOnF(focalPt,PBottom,"#2563eb",3,.95,"lower");
-
-    circle(svg,PTop,8,{fill:"#2563eb",stroke:"white","stroke-width":3});
-    circle(svg,PBottom,8,{fill:"#2563eb",stroke:"white","stroke-width":3});
+    line(svg,axisPt,P,{stroke:"#2563eb","stroke-width":3,opacity:.7});
+    const arc=arcPathCentredOnF(F,focalPt,P);
+    svg.appendChild(svgEl("path",{d:arc,fill:"none",stroke:"#2563eb","stroke-width":3,opacity:.95}));
+    circle(svg,P,8,{fill:"#2563eb",stroke:"white","stroke-width":3});
     circle(svg,eccPt,5,{fill:"#22c55e"});
     circle(svg,focalPt,5,{fill:"#22c55e"});
   }
