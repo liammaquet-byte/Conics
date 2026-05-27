@@ -155,34 +155,42 @@ function renderScene(){
   svg.appendChild(svgEl("path",{d:pathFrom(curves.top.map(mapScene)),fill:"none",stroke:"#18181b","stroke-width":4,"stroke-linecap":"round","stroke-linejoin":"round"}));
   if(mode!=="parabola" || e<1) svg.appendChild(svgEl("path",{d:pathFrom(curves.bottom.map(mapScene)),fill:"none",stroke:"#18181b","stroke-width":4,"stroke-linecap":"round","stroke-linejoin":"round"}));
 
+  function drawArcCentredOnF(startPt,endPt,colour,width,opacity,direction){
+    const r=Math.hypot(startPt.x-F.x,startPt.y-F.y);
+    let a0=Math.atan2(startPt.y-F.y,startPt.x-F.x);
+    let a1=Math.atan2(endPt.y-F.y,endPt.x-F.x);
+    if(direction==="upper"){
+      while(a1>a0) a1-=Math.PI*2;
+    }else{
+      while(a1<a0) a1+=Math.PI*2;
+    }
+    const steps=28;
+    let d="";
+    for(let j=0;j<=steps;j++){
+      const a=a0+(a1-a0)*j/steps;
+      const x=F.x+r*Math.cos(a);
+      const y=F.y+r*Math.sin(a);
+      d+=(j===0?"M":"L")+x.toFixed(2)+","+y.toFixed(2);
+    }
+    svg.appendChild(svgEl("path",{d,fill:"none",stroke:colour,"stroke-width":width,opacity,"stroke-linecap":"round"}));
+  }
+
   if(showConstruction){
     const branch=curvePoints(divisions+1).top;
-
-    function drawArcFromFocus(startPt, endPt, colour, width, opacity, sweep){
-      const r=Math.hypot(startPt.x-F.x,startPt.y-F.y);
-      const arc=`M ${startPt.x.toFixed(2)} ${startPt.y.toFixed(2)} A ${r.toFixed(2)} ${r.toFixed(2)} 0 0 ${sweep} ${endPt.x.toFixed(2)} ${endPt.y.toFixed(2)}`;
-      svg.appendChild(svgEl("path",{d:arc,fill:"none",stroke:colour,"stroke-width":width,opacity:opacity}));
-    }
-
     branch.forEach((pt,i)=>{
-      const topPt=pt;
       const bottomPt={x:pt.x,y:-pt.y};
       const axisPt=mapScene({x:pt.x,y:0});
-      const eccTop=mapScene({x:pt.x,y:eccentricityY(pt.x)});
-      const eccBottom=mapScene({x:pt.x,y:-eccentricityY(pt.x)});
-      const focalTop=mapScene({x:focusDistance,y:eccentricityY(pt.x)});
-      const focalBottom=mapScene({x:focusDistance,y:-eccentricityY(pt.x)});
-      const PTop=mapScene(topPt);
+      const eccPt=mapScene({x:pt.x,y:eccentricityY(pt.x)});
+      const focalPt=mapScene({x:focusDistance,y:eccentricityY(pt.x)});
+      const PTop=mapScene(pt);
       const PBottom=mapScene(bottomPt);
 
-      line(svg,axisPt,eccTop,{stroke:"#22c55e","stroke-width":1.2,opacity:.7});
-      line(svg,axisPt,eccBottom,{stroke:"#22c55e","stroke-width":1.2,opacity:.45});
-      line(svg,eccTop,focalTop,{stroke:"#22c55e","stroke-width":1.2,opacity:.7});
-      line(svg,eccBottom,focalBottom,{stroke:"#22c55e","stroke-width":1.2,opacity:.45});
+      line(svg,axisPt,eccPt,{stroke:"#22c55e","stroke-width":1.2,opacity:.7});
+      line(svg,eccPt,focalPt,{stroke:"#22c55e","stroke-width":1.2,opacity:.7});
       line(svg,PTop,PBottom,{stroke:"#22c55e","stroke-width":1.2,opacity:.38});
 
-      drawArcFromFocus(focalTop,PTop,"#22c55e",1.2,.75,1);
-      drawArcFromFocus(focalBottom,PBottom,"#22c55e",1.2,.75,0);
+      drawArcCentredOnF(focalPt,PTop,"#22c55e",1.2,.75,"upper");
+      drawArcCentredOnF(focalPt,PBottom,"#22c55e",1.2,.75,"lower");
 
       circle(svg,PTop,3,{fill:"#18181b",opacity:.65});
       circle(svg,PBottom,3,{fill:"#18181b",opacity:.65});
@@ -195,28 +203,22 @@ function renderScene(){
     const cp=constructionPoint();
     const cpBottom={x:cp.x,y:-cp.y};
     const axisPt=mapScene({x:cp.x,y:0});
-    const eccTop=mapScene({x:cp.x,y:eccentricityY(cp.x)});
-    const eccBottom=mapScene({x:cp.x,y:-eccentricityY(cp.x)});
-    const focalTop=mapScene({x:focusDistance,y:eccentricityY(cp.x)});
-    const focalBottom=mapScene({x:focusDistance,y:-eccentricityY(cp.x)});
+    const eccPt=mapScene({x:cp.x,y:eccentricityY(cp.x)});
+    const focalPt=mapScene({x:focusDistance,y:eccentricityY(cp.x)});
     const PTop=mapScene(cp);
     const PBottom=mapScene(cpBottom);
 
-    line(svg,axisPt,eccTop,{stroke:"#2563eb","stroke-width":3,opacity:.95});
-    line(svg,axisPt,eccBottom,{stroke:"#2563eb","stroke-width":3,opacity:.65});
-    line(svg,eccTop,focalTop,{stroke:"#2563eb","stroke-width":3,opacity:.95});
-    line(svg,eccBottom,focalBottom,{stroke:"#2563eb","stroke-width":3,opacity:.65});
+    line(svg,axisPt,eccPt,{stroke:"#2563eb","stroke-width":3,opacity:.95});
+    line(svg,eccPt,focalPt,{stroke:"#2563eb","stroke-width":3,opacity:.95});
     line(svg,PTop,PBottom,{stroke:"#2563eb","stroke-width":3,opacity:.65});
 
-    drawArcFromFocus(focalTop,PTop,"#2563eb",3,.95,1);
-    drawArcFromFocus(focalBottom,PBottom,"#2563eb",3,.95,0);
+    drawArcCentredOnF(focalPt,PTop,"#2563eb",3,.95,"upper");
+    drawArcCentredOnF(focalPt,PBottom,"#2563eb",3,.95,"lower");
 
     circle(svg,PTop,8,{fill:"#2563eb",stroke:"white","stroke-width":3});
     circle(svg,PBottom,8,{fill:"#2563eb",stroke:"white","stroke-width":3});
-    circle(svg,eccTop,5,{fill:"#22c55e"});
-    circle(svg,eccBottom,5,{fill:"#22c55e"});
-    circle(svg,focalTop,5,{fill:"#22c55e"});
-    circle(svg,focalBottom,5,{fill:"#22c55e"});
+    circle(svg,eccPt,5,{fill:"#22c55e"});
+    circle(svg,focalPt,5,{fill:"#22c55e"});
   }
 
   if(showLabels){
